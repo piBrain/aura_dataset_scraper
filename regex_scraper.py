@@ -18,8 +18,7 @@ def main():
     except e:
         print(e)
     regex = re.compile(r'(GET|POST|DELETE|PUT\A) ([a-zA-z/:,0-9\-]+)')
-    y =[re.findall(regex,h2t.html2text(str(urlopen(page).read()))) for page in pages]
+    y = [re.findall(regex,h2t.html2text(str(urlopen(page).read()))) for page in pages]
 
-    embed()
 if __name__ == '__main__':
     main()
