@@ -1,0 +1,13 @@
+setup.py
+aura_scrapy/__init__.py
+aura_scrapy/items.py
+aura_scrapy/middlewares.py
+aura_scrapy/pipelines.py
+aura_scrapy/settings.py
+aura_scrapy/spiders/__init__.py
+aura_scrapy/spiders/rest_doc_crawler.py
+project.egg-info/PKG-INFO
+project.egg-info/SOURCES.txt
+project.egg-info/dependency_links.txt
+project.egg-info/entry_points.txt
+project.egg-info/top_level.txt
