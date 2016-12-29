@@ -6,10 +6,11 @@ import itertools
 import os
 import aura_scrapy
 import urllib
+import random
 
 class RestRequestCrawler(scrapy.Spider):
     name = 'rest_request_crawler'
-    regexs = [re.compile(r'(GET|POST|DELETE|PUT\A) ([a-zA-z/:,0-9{}\-.]+)+'), re.compile(r'(GET|DELETE|POST|PUT\A)[,a-zA-Z0-9/\-:{}`. ]+')]
+    regexs = [re.compile(r'(GET|POST|DELETE|PUT\A) ([a-zA-z/:,0-9{}\-.]+)+'), re.compile(r'(GET|DELETE|POST|PUT\A)[,a-zA-Z0-9/\-:{}`.=\+ ]+')]
     crawlera_enabled = True
     crawlera_apikey = '4f24252b2cfe4c3cabf35d866e9dca17'
     allowed_schemes = ['http','https']
@@ -21,23 +22,25 @@ class RestRequestCrawler(scrapy.Spider):
         self._seen_domains = {}
 
     def start_requests(self):
+        random.shuffle(self.api_data)
         for api in self.api_data:
             try:
-                parse_lambda = lambda response,api_name=api['api_name']: self.docs_parse(response,api_name)
+                parse_lambda = lambda response,api_name=api['api_name']: self.docs_parse(response,api_name,0)
                 self._add_to_allowed_domains(api['doc_url'])
                 self._add_to_seen_domains(urllib.parse.urlparse(api['doc_url']).netloc,1,0)
                 yield scrapy.Request(api['doc_url'], callback=parse_lambda)
             except TypeError:
                 print('Empty doc url.')
 
-    def docs_parse(self,response,api_name):
+    def docs_parse(self,response,api_name,count):
+        if count >= 500:
+            print(response.url,count)
+            return
         self._update_domain_seen_count(urllib.parse.urlparse(response.url).netloc)
         
         data_array = self._extract_request_documentation(api_name,response)
 
         for match_dict in data_array:
-            if match_dict is None:
-                continue
             yield match_dict
 
         if not self._can_crawl(urllib.parse.urlparse(response.url).netloc):
@@ -49,7 +52,7 @@ class RestRequestCrawler(scrapy.Spider):
                 continue
             if not any([x in urllib.parse.urlparse(full_url).netloc for x in RestRequestCrawler.allowed_link_substrings]):
                 continue
-            parse_lambda = lambda response,api_name=api_name: self.docs_parse(response,api_name)
+            parse_lambda = lambda response,api_name=api_name: self.docs_parse(response,api_name,count+1)
             yield scrapy.Request(response.urljoin(url),callback=parse_lambda)
 
     def _can_crawl(self,url):
@@ -88,12 +91,13 @@ class RestRequestCrawler(scrapy.Spider):
 
         data_array = []
         for regex in RestRequestCrawler.regexs:
-            for match in re.findall(regex,h2t.html2text(str(response.body))):
-                data_array.append(self._clean_scrape_data(match,api_name,response))
             for text in response.xpath("//text()").extract():
                 matches = re.findall(regex,text.rstrip())
                 if len(matches) > 0:
-                    data_array.append(self._clean_scrape_data(matches,api_name,response,text))
+                    cleaned_data = self._clean_scrape_data(matches,api_name,response,text)
+                    if cleaned_data is not None:
+                        data_array.append(cleaned_data)
+                        self._update_domain_data_count(urllib.parse.urlparse(response.url).netloc)
         return data_array
 
     def _clean_scrape_data(self,matched_text,api_name,response,original_text=''):
@@ -102,7 +106,14 @@ class RestRequestCrawler(scrapy.Spider):
         match_list = list(matched_text)
         if not any([type(x) == tuple for x in list(match_list)]):
             return None
-        self._update_domain_data_count(urllib.parse.urlparse(response.url).netloc)
+        for i,x in enumerate(match_list):
+            if x[1] in ['request','requests','requests:','requests,','requests.','or','is','a','and','the','are','to']:
+                del(match_list[i])
+                continue
+            if x[0] == x[1]:
+                del(match_list[i])
+        if not match_list:
+            return None
         return {
                 'api_name': api_name,
                 'api_url': response.url,

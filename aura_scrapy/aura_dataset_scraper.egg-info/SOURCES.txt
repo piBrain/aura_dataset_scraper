@@ -1,0 +1,14 @@
+setup.py
+aura_dataset_scraper.egg-info/PKG-INFO
+aura_dataset_scraper.egg-info/SOURCES.txt
+aura_dataset_scraper.egg-info/dependency_links.txt
+aura_dataset_scraper.egg-info/entry_points.txt
+aura_dataset_scraper.egg-info/top_level.txt
+aura_scrapy/__init__.py
+aura_scrapy/items.py
+aura_scrapy/middlewares.py
+aura_scrapy/pipelines.py
+aura_scrapy/settings.py
+aura_scrapy/spiders/__init__.py
+aura_scrapy/spiders/rest_doc_crawler.py
+aura_scrapy/spiders/rest_request_crawler.py

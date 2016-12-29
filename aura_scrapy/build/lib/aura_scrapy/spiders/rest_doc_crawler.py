@@ -3,8 +3,7 @@ from csv import reader
 class RestDocCrawler(scrapy.Spider):
 
     name = 'rest_doc_crawler'
-    # allowed_domains = ['http://www.programmableweb.com/api/','http://www.programmableweb.com/apis/']
-    allowed_regex = r'(http://)?www.programmableweb.com([a-zA-Z0-9\/\-])*'
+    allowed_regex = r'(http://)?www.programmableweb.com([a-zA-Z0-9/\-])*'
 
     ROOT_URL = 'http://www.programmableweb.com'
 

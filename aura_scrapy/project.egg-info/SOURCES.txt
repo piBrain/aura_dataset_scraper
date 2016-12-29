@@ -6,6 +6,7 @@ aura_scrapy/pipelines.py
 aura_scrapy/settings.py
 aura_scrapy/spiders/__init__.py
 aura_scrapy/spiders/rest_doc_crawler.py
+aura_scrapy/spiders/rest_request_crawler.py
 project.egg-info/PKG-INFO
 project.egg-info/SOURCES.txt
 project.egg-info/dependency_links.txt
