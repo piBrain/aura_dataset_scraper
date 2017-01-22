@@ -1,4 +1,3 @@
-import IPython as ip
 import datetime
 import iso8601
 import argparse
@@ -7,6 +6,8 @@ import re
 import json
 import logging
 import urllib.parse as urlparse
+import boto3
+from contextlib import contextmanager
 
 class DataCleaner():
     def __init__(self):
@@ -18,6 +19,7 @@ class DataCleaner():
         }
         self.row_count = 0
         self.garbage_regex = re.compile(r'((request*.{0,3})|(^.{0,10}$))')
+        self.s3_client = boto3.resource('s3')
 
     def process_row(self,row):
         self.row_count += 1
@@ -66,11 +68,17 @@ class DataCleaner():
             return
         return self._simple_case( { 'api_url': row['api_url'],'request': potential_valid_cases } )
 
+    @contextmanager
+    def _s3_assist(self):
+        self.s3_client.create_bucket(Bucket='pibrain.dev.general')
+        key = ''.join(['datasets/cleaned.data/clean_data_',str(datetime.datetime.utcnow().isoformat())])
+        s3_object = self.s3_client.Object('pibrain.dev.general',key)
+        yield s3_object
+
     def flush_row_cache(self):
-        with open(''.join(['data/cleaned_data/clean_data_',str(datetime.datetime.utcnow().isoformat())]),'w+') as f:
-            for x in self.row_cache:
-                json.dump(x,f)
-                f.write('\n')
+        with self._s3_assist() as key:
+            rows_string = ''.join([''.join([json.dumps(x),'\n']) for x in self.row_cache])
+            key.put(Body=rows_string)
         del(self.row_cache)
         self.row_cache = []
         return
@@ -253,6 +261,7 @@ class CurlParser():
             if not any([parsed_args,method,user_supplied_token]):
                 return None
             return {
+                'method': method,
                 'parsed_request': ' '.join([method.upper(),urlparse.urljoin(original_url,parsed_args.url),user_supplied_token]).rstrip(),
                 'arguments': self._build_data_parse(parsed_args)
             }
@@ -265,6 +274,7 @@ class CurlParser():
         if not any([parsed_args,method,user_supplied_token]):
             return None
         return { 
+            'method': method,
             'parsed_request': ' '.join([method.upper(),urlparsae.urljoin(original_url,parsed_args.url),user_supplied_token]).rstrip(),
             'arguments': self._build_data_parse(parsed_args,user_inserts) 
         }
