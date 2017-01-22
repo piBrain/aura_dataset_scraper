@@ -1,0 +1,15 @@
+defaults: &defaults
+  adapter: postgresql
+  pool: 15
+  timeout: 5000
+
+development:
+  <<: *defaults
+  database: pibrain_development
+
+test:
+  <<: *defaults
+  database: pibrain_test
+
+production:
+  <<: *defaults
