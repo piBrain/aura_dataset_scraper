@@ -1,3 +1,4 @@
 .scrapy/
 __pycache__/
 data/cleaned_data
+ruby_postprocessing/vendor/

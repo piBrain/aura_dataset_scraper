@@ -10,18 +10,24 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20161230040124) do
+ActiveRecord::Schema.define(version: 20170306032046) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
-  create_table "request_data", force: :cascade do |t|
-    t.datetime "created_at",     null: false
-    t.datetime "updated_at",     null: false
-    t.string   "parsed_request"
+  create_table "RequestData", force: :cascade do |t|
+    t.time     "created_at"
+    t.time     "updated_at"
+    t.string   "parsed_request", limit: 255
     t.integer  "method"
     t.json     "data"
     t.json     "form"
+    t.datetime "createdAt",                                  null: false
+    t.datetime "updatedAt",                                  null: false
+    t.boolean  "validated",                  default: false, null: false
+  end
+
+  create_table "SequelizeMeta", primary_key: "name", id: :string, limit: 255, force: :cascade do |t|
   end
 
 end

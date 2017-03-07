@@ -5,11 +5,11 @@ defaults: &defaults
 
 development:
   <<: *defaults
-  database: pibrain_development
+  database: aura_qa_development
 
 test:
   <<: *defaults
-  database: pibrain_test
+  database: aura_qa_test
 
 production:
   <<: *defaults
