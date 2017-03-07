@@ -2,3 +2,4 @@
 __pycache__/
 data/cleaned_data
 ruby_postprocessing/vendor/
+.DS_Store
