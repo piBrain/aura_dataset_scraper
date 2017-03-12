@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170306032046) do
+ActiveRecord::Schema.define(version: 20170312034643) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -25,6 +25,7 @@ ActiveRecord::Schema.define(version: 20170306032046) do
     t.datetime "createdAt",                                  null: false
     t.datetime "updatedAt",                                  null: false
     t.boolean  "validated",                  default: false, null: false
+    t.string   "found_at"
   end
 
   create_table "SequelizeMeta", primary_key: "name", id: :string, limit: 255, force: :cascade do |t|
