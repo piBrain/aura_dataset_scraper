@@ -33,9 +33,9 @@ class DataCleaner():
     def _simple_case(self,row):
         requests = row['request']
         if len(requests) >= 2 and type(requests[0]) == list:
-            return [ { 'parsed_request': ' '.join([request[0],urlparse.urljoin(row['api_url'],request[1])]), 'arguments': { 'data': '' } } for request in requests ]
+            return [ { 'api_url': row['api_url'], 'method': request[0], 'parsed_request': ' '.join([urlparse.urljoin(row['api_url'],request[1])]), 'arguments': { 'data': '' } } for request in requests ]
         else:
-            return { 'parsed_request': ' '.join([requests[0][0],urlparse.urljoin(row['api_url'],requests[0][1])]), 'arguments': { 'data': '' } }
+            return { 'api_url': row['api_url'], 'method': requests[0][0], 'parsed_request': ' '.join([urlparse.urljoin(row['api_url'],requests[0][1])]), 'arguments': { 'data': '' } }
 
     def _curl_format_case(self,row):
         parsed_result = CurlParser().parse_curl(row['original_text'],row['api_url'])
@@ -237,17 +237,16 @@ class CurlParser():
         self.parser.add_argument('-V', '--version')
 
     def parse_curl(self,curl_command,original_url):
-        formatted_command = self._preprocessor(curl_command)
+        formatted_command = curl_command
         try:
             return self._general_curl(formatted_command,original_url)
-        except:
+        except ValueError as e:
             return self._embedded_curl(formatted_command,original_url)
 
-    def _preprocessor(self,curl_command):
+    def _attempt_fix(self,curl_command):
         formatted = (curl_command
                     .replace('\\','')
                     .replace('\n','')
-                    .replace(' ','')
                     .replace('\'','')
                     .replace('\u201d','"')
                     .replace('\u201c','"')
@@ -257,25 +256,30 @@ class CurlParser():
     def _general_curl(self,curl_command,original_url):
         try:
             tokens = shlex.split(curl_command.rstrip().lstrip())
-            parsed_args,method,user_supplied_token = self._parse_command(tokens)
+            parsed_args,unparsables,method,user_supplied_token = self._parse_command(tokens)
             if not any([parsed_args,method,user_supplied_token]):
                 return None
+            parsed_url = parsed_args.url or unparsables[0]
             return {
+                'api_url': original_url,
                 'method': method,
-                'parsed_request': ' '.join([method.upper(),urlparse.urljoin(original_url,parsed_args.url),user_supplied_token]).rstrip(),
+                'parsed_request': ' '.join([urlparse.urljoin(original_url,parsed_url),user_supplied_token]).rstrip(),
                 'arguments': self._build_data_parse(parsed_args)
             }
         except ValueError as e:
-            logging.error("{0}, Curl Command:{1}".format(e,curl_command))
+            logging.error("{0}, Curl Command:{1} WILL ATTEMPT AS EMBEDDED CURL".format(e,curl_command))
+            raise ValueError
 
     def _embedded_curl(self,curl_command,original_url):
         user_inserts,tokens = self._php_curl_finder(curl_command)
-        parsed_args,method,user_supplied_token = self._parse_command(tokens)
+        parsed_args,unparsables,method,user_supplied_token = self._parse_command(tokens)
         if not any([parsed_args,method,user_supplied_token]):
             return None
+        parsed_url = parsed_args.url or unparsables[0]
         return { 
+            'api_url': original_url,
             'method': method,
-            'parsed_request': ' '.join([method.upper(),urlparsae.urljoin(original_url,parsed_args.url),user_supplied_token]).rstrip(),
+            'parsed_request': ' '.join([parsed_url,user_supplied_token]).rstrip(),
             'arguments': self._build_data_parse(parsed_args,user_inserts) 
         }
 
@@ -288,11 +292,16 @@ class CurlParser():
 
     def _parse_command(self,tokenized_command):
         try:
-            parsed_args, _ = self.parser.parse_known_args(tokenized_command)
+            parsed_args, unparsables = self.parser.parse_known_args(tokenized_command)
         except ArgumentParserError as e:
-            logging.error("{0}, Curl Command:{1}".format(e,tokenized_command))
-            return (None,None,None)
-        method = parsed_args.request
+            logging.error("{0}, Curl Command:{1}, WILL TRY FIXING".format(e,tokenized_command))
+            try:
+                parsed_args, unparsables = self.parser.parse_known_args(self._attempt_fix(tokenized_command))
+                logging.info('FIX SUCCEEDED')
+            except:
+                logging.error("FIX FAILED: {0}, Curl Command:{1}".format(e,tokenized_command))
+                return (None,None,None)
+        method = parsed_args.request.upper()
         if not parsed_args.request:
             if parsed_args.data:
                 method = "POST"
@@ -301,7 +310,7 @@ class CurlParser():
         user_supplied_token = ''
         if method == "POST" or method == "PUT":
             user_supplied_token = '<user_insert>'
-        return (parsed_args,method,user_supplied_token)
+        return (parsed_args,unparsables,method,user_supplied_token)
 
     def _php_curl_finder(self,curl_command):
         curl_regex = re.compile(r'curl.{0,280}',re.IGNORECASE)
