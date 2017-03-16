@@ -26,7 +26,8 @@ module Pibrain
           parsed_request: row['parsed_request'],
           method: row['method'],
           data: row['arguments']['data'],
-          form: row['arguments']['form'],
+          form: row['arguments']['forms'] || JSON.unparse({}),
+          found_at: row['api_url'],
           createdAt: DateTime.now,
           updatedAt: DateTime.now
         ).save!

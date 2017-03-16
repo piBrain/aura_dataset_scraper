@@ -248,6 +248,7 @@ class CurlParser():
                     .replace('\\','')
                     .replace('\n','')
                     .replace('\'','')
+                    .replace(' ', '')
                     .replace('\u201d','"')
                     .replace('\u201c','"')
                     .replace('"',''))
@@ -259,7 +260,11 @@ class CurlParser():
             parsed_args,unparsables,method,user_supplied_token = self._parse_command(tokens)
             if not any([parsed_args,method,user_supplied_token]):
                 return None
-            parsed_url = parsed_args.url or unparsables[0]
+            parsed_url = original_url
+            if len(unparsables) == 1:
+                parsed_url = unparsables[0]
+            if parsed_args.url:
+                parsed_url = parsed_args.url
             return {
                 'api_url': original_url,
                 'method': method,
@@ -272,10 +277,20 @@ class CurlParser():
 
     def _embedded_curl(self,curl_command,original_url):
         user_inserts,tokens = self._php_curl_finder(curl_command)
+        if not any([user_inserts, tokens]):
+            return None
+
         parsed_args,unparsables,method,user_supplied_token = self._parse_command(tokens)
+
         if not any([parsed_args,method,user_supplied_token]):
             return None
-        parsed_url = parsed_args.url or unparsables[0]
+
+        parsed_url = original_url
+        if len(unparsables) == 1:
+            parsed_url = unparsables[0]
+        if parsed_args.url:
+            parsed_url = parsed_args.url
+
         return { 
             'api_url': original_url,
             'method': method,
@@ -300,7 +315,7 @@ class CurlParser():
                 logging.info('FIX SUCCEEDED')
             except:
                 logging.error("FIX FAILED: {0}, Curl Command:{1}".format(e,tokenized_command))
-                return (None,None,None)
+                return (None,None,None,None)
         method = parsed_args.request.upper()
         if not parsed_args.request:
             if parsed_args.data:
@@ -325,7 +340,7 @@ class CurlParser():
             self._match_replace_dollar_vars(formatted_curl_command,user_inserts,tokens)
         except Exception as e:
             logging.error(e)
-            return None
+            return (None,None)
         return (user_inserts,tokens)
 
     def _match_replace_dollar_vars(self,curl_command,user_inserts,tokens):

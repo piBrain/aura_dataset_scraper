@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170312034643) do
+ActiveRecord::Schema.define(version: 20170315014343) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -19,13 +19,13 @@ ActiveRecord::Schema.define(version: 20170312034643) do
     t.time     "created_at"
     t.time     "updated_at"
     t.string   "parsed_request", limit: 255
-    t.integer  "method"
     t.json     "data"
-    t.json     "form"
+    t.json     "form",                       default: {},    null: false
     t.datetime "createdAt",                                  null: false
     t.datetime "updatedAt",                                  null: false
     t.boolean  "validated",                  default: false, null: false
-    t.string   "found_at"
+    t.string   "found_at",                   default: "",    null: false
+    t.string   "method",                                     null: false
   end
 
   create_table "SequelizeMeta", primary_key: "name", id: :string, limit: 255, force: :cascade do |t|

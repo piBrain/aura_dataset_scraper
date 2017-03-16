@@ -1,15 +1,11 @@
 grammar Pibrain::DatasetValidation::Grammar
 
   rule valid
-    method space url
-  end
-
-  rule method
-    ('POST'|'GET'|'PUT'|'DELETE')
+    url
   end
 
   rule url
-    'http''s'?'://'(url_grouping'/'?)*
+    'http''s'?'://'(url_grouping'/'?)*ellipse_set?space?(url_grouping)?
   end
 
   rule space
@@ -17,11 +13,15 @@ grammar Pibrain::DatasetValidation::Grammar
   end
 
   rule url_grouping
-    (brace_set|([-.+=A-Za-z0-9])|quote_set|user_insert)
+    (brace_set|([-.+=A-Za-z0-9_:?])|quote_set|user_insert|embedded_variables)
   end
 
   rule user_insert
     '<user_insert>'
+  end
+
+  rule embedded_variables
+    '$'[A-Za-z]*
   end
 
   rule brace_set
@@ -29,15 +29,20 @@ grammar Pibrain::DatasetValidation::Grammar
   end
 
   rule curly_bracket_set
-    '{'user_insert'}'
+    '{'user_insert'}' | '{'[-.+=A-Za-z0-9_:]*'}'
   end
 
   rule square_bracket_set
-    '['user_insert']'
+    '['user_insert']' | '['[-.+=A-Za-z0-9_|:]*']'
+
   end
 
   rule comma
     ','
+  end
+
+  rule ellipse_set
+   '...'
   end
 
   rule quote_set

@@ -2,7 +2,7 @@ module Pibrain
   module DatasetValidation
     class Validator
 
-      INVALID_ROW = Struct.new(:row,:error)
+      INVALID_ROW = 'Row: %s, Error: %s'
 
       def initialize
         @valid_count = 0
@@ -18,7 +18,7 @@ module Pibrain
           true
         rescue Citrus::ParseError => e
           @invalid_count+=1
-          Rails.logger.debug(INVALID_ROW.new(row,e).to_s)
+          Rails.logger.error(format(INVALID_ROW, row, e))
           false
         end
       end
