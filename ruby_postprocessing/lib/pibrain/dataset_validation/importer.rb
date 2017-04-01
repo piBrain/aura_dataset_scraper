@@ -25,8 +25,8 @@ module Pibrain
         RequestDatum.new(
           parsed_request: row['parsed_request'],
           method: row['method'],
-          data: row['arguments']['data'],
-          form: row['arguments']['forms'] || JSON.unparse({}),
+          data: row['arguments']['data'].presence || JSON.unparse({}),
+          form: row['arguments']['forms'].presence || JSON.unparse({}),
           found_at: row['api_url'],
           createdAt: DateTime.now,
           updatedAt: DateTime.now
